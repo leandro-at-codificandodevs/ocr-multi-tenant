@@ -14,7 +14,8 @@ public class MyApp extends App {
             throw new IllegalArgumentException("Ambiente não foi passado no deploy");
         }
 
-        Map<String, Object> envConfig = (Map<String, Object>) app.getNode().tryGetContext(environment);
+        @SuppressWarnings("unchecked")
+		Map<String, Object> envConfig = (Map<String, Object>) app.getNode().tryGetContext(environment);
         if (envConfig == null) {
             throw new RuntimeException("Configuração não encontrada para ambiente: " + environment);
         }

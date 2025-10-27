@@ -14,7 +14,6 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
 
-import br.com.prognum.multi_tenant_ocr.common.Utils.Config;
 import br.com.prognum.multi_tenant_ocr.common.Utils.ConfigImpl;
 
 /**
@@ -23,16 +22,13 @@ import br.com.prognum.multi_tenant_ocr.common.Utils.ConfigImpl;
  */
 public class Handler implements RequestHandler<APIGatewayV2HTTPEvent, APIGatewayV2HTTPResponse> {
 
-    private final Config config;
     private final AmazonDynamoDB dynamoDbClient;
-    private final int MAX_REQUESTED_COUNT = 0;
 
     public Handler() {
-        this(AmazonDynamoDBClientBuilder.standard().build(), new ConfigImpl());
+        this(AmazonDynamoDBClientBuilder.standard().build());
     }
 
-    public Handler(AmazonDynamoDB dynamoDbClient, Config config) {
-        this.config = config;
+    public Handler(AmazonDynamoDB dynamoDbClient) {
         this.dynamoDbClient = dynamoDbClient;
     }
 
