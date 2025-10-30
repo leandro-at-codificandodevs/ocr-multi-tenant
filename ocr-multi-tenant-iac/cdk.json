@@ -16,7 +16,7 @@
 	"PROD": {
 		"system":"integration-ocr-prognum",
 		"domainPrefix":"integration-ocr-prod-prognum",
-		"tenantIds": ["00416968000101"]
+		"tenantIds": ["00416968000101", "31872495000172"]
 	},
 	"DEV2": {
 		"system":"integration-ocr-prognum",
