@@ -18,6 +18,11 @@
 		"domainPrefix":"integration-ocr-prod-prognum",
 		"tenantIds": ["00416968000101", "31872495000172"]
 	},
+    "C6-PROD": {
+        "system":"integration-ocr-prognum",
+        "domainPrefix":"integration-ocr-c6-prod-prognum",
+        "tenantIds": ["00416968000101"]
+    },
 	"DEV2": {
 		"system":"integration-ocr-prognum",
 		"domainPrefix":"integration-ocr-dev2-prognum",
