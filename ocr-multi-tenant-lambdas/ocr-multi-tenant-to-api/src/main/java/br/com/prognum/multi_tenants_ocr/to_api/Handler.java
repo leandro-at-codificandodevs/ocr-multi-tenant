@@ -14,7 +14,8 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
 
-import br.com.prognum.multi_tenant_ocr.common.Utils.ConfigImpl;
+import br.com.prognum.multi_tenant_ocr.common.utils.Config;
+import br.com.prognum.multi_tenant_ocr.common.utils.ConfigImpl;
 
 /**
  * Lambda function que consulta o resultado do processamento do documento na
@@ -23,13 +24,15 @@ import br.com.prognum.multi_tenant_ocr.common.Utils.ConfigImpl;
 public class Handler implements RequestHandler<APIGatewayV2HTTPEvent, APIGatewayV2HTTPResponse> {
 
     private final AmazonDynamoDB dynamoDbClient;
+    private final Config config;
 
     public Handler() {
-        this(AmazonDynamoDBClientBuilder.standard().build());
+        this(AmazonDynamoDBClientBuilder.standard().build(), new ConfigImpl());
     }
 
-    public Handler(AmazonDynamoDB dynamoDbClient) {
+    public Handler(AmazonDynamoDB dynamoDbClient, Config config) {
         this.dynamoDbClient = dynamoDbClient;
+        this.config = config;
     }
 
     @Override
@@ -83,7 +86,7 @@ public class Handler implements RequestHandler<APIGatewayV2HTTPEvent, APIGateway
     private QueryResult queryDynamoDB(String tenantId, String requestId) {
         final Map<String, AttributeValue> key = buildDynamoDBKey(tenantId, requestId);
         QueryRequest queryRequest = new QueryRequest()
-            .withTableName(ConfigImpl.staticBuildTableName(tenantId))
+            .withTableName(config.buildTableName(tenantId))
             .withKeyConditionExpression("pk = :pk AND sk = :sk")
             .withExpressionAttributeValues(Map.of(":pk",key.get("pk"),":sk",key.get("sk")));
 

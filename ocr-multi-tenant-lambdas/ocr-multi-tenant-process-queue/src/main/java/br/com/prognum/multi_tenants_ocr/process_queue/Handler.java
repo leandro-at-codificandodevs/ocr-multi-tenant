@@ -20,8 +20,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import br.com.prognum.multi_tenant_ocr.common.Utils.Config;
-import br.com.prognum.multi_tenant_ocr.common.Utils.ConfigImpl;
+import br.com.prognum.multi_tenant_ocr.common.utils.Config;
+import br.com.prognum.multi_tenant_ocr.common.utils.ConfigImpl;
 
 /**
  * Lambda function que recebe o resultado do processamento OCR e atualiza

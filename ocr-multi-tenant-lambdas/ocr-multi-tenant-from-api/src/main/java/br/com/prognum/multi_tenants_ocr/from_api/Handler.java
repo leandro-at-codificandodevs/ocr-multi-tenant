@@ -24,8 +24,8 @@ import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import br.com.prognum.multi_tenant_ocr.common.Utils.Config;
-import br.com.prognum.multi_tenant_ocr.common.Utils.ConfigImpl;
+import br.com.prognum.multi_tenant_ocr.common.utils.Config;
+import br.com.prognum.multi_tenant_ocr.common.utils.ConfigImpl;
 
 /**
  * Lambda function que recebe requisições do API Gateway para processar
@@ -126,7 +126,7 @@ public class Handler implements RequestHandler<APIGatewayV2HTTPEvent, APIGateway
 
         String tableName = config.buildTableName(tenantId);
         String bucketName = config.buildBucketName(tenantId);
-        String outputQueueUrl = config.getOutputQueueUrl();
+        String outputQueueUrl = config.buildOutputQueueUrl(tenantId);
 
         Map<String, AttributeValue> item = buildDynamoDBItem(tenantId,
                 requestId,
@@ -165,9 +165,9 @@ public class Handler implements RequestHandler<APIGatewayV2HTTPEvent, APIGateway
     private void sendMessageToQueue(String tenantId, String requestId, ApiRequest apiRequest, String s3Key,
             String timestamp, Context context) throws Exception {
 
-        String inputQueueUrl = config.getInputQueueUrl();
+        String inputQueueUrl = config.buildInputQueueUrl(tenantId);
         String bucketName = config.buildBucketName(tenantId);
-        String outputQueueUrl = config.getOutputQueueUrl();
+        String outputQueueUrl = config.buildOutputQueueUrl(tenantId);
 
         SqsRequest sqsRequest = buildSqsRequest(tenantId,
                 requestId,
@@ -190,7 +190,6 @@ public class Handler implements RequestHandler<APIGatewayV2HTTPEvent, APIGateway
 
     private SqsRequest buildSqsRequest(String tenantId, String requestId, ApiRequest apiRequest, String bucketName,
             String s3Key, String outputQueueUrl, String timestamp) {
-
         SqsRequest sqsRequest = new SqsRequest();
         sqsRequest.setTenantId(tenantId);
         sqsRequest.setRequestId(requestId);

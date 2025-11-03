@@ -15,7 +15,6 @@ import software.amazon.awscdk.Tags;
 import software.amazon.awscdk.aws_apigatewayv2_authorizers.HttpUserPoolAuthorizer;
 import software.amazon.awscdk.aws_apigatewayv2_integrations.HttpLambdaIntegration;
 import software.amazon.awscdk.services.apigatewayv2.AddRoutesOptions;
-import software.amazon.awscdk.services.apigatewayv2.CfnStage;
 import software.amazon.awscdk.services.apigatewayv2.CorsHttpMethod;
 import software.amazon.awscdk.services.apigatewayv2.CorsPreflightOptions;
 import software.amazon.awscdk.services.apigatewayv2.HttpApi;
@@ -32,17 +31,11 @@ import software.amazon.awscdk.services.cognito.UserPoolResourceServer;
 import software.amazon.awscdk.services.dynamodb.Attribute;
 import software.amazon.awscdk.services.dynamodb.AttributeType;
 import software.amazon.awscdk.services.dynamodb.Table;
-import software.amazon.awscdk.services.iam.ManagedPolicy;
-import software.amazon.awscdk.services.iam.Role;
-import software.amazon.awscdk.services.iam.ServicePrincipal;
 import software.amazon.awscdk.services.kms.Key;
 import software.amazon.awscdk.services.lambda.Code;
 import software.amazon.awscdk.services.lambda.Function;
 import software.amazon.awscdk.services.lambda.Runtime;
 import software.amazon.awscdk.services.lambda.eventsources.SqsEventSource;
-//novo
-import software.amazon.awscdk.services.logs.LogGroup;
-import software.amazon.awscdk.services.logs.RetentionDays;
 import software.amazon.awscdk.services.s3.Bucket;
 import software.amazon.awscdk.services.secretsmanager.Secret;
 import software.amazon.awscdk.services.sqs.Queue;
@@ -55,8 +48,8 @@ public class MyStack extends Stack {
     private static final int OUTPUT_VISIBILITY_TIMEOUT_IN_SECS = 300;
     private static final String BUCKET_NAME_TEMPLATE = "BUCKET_NAME_TEMPLATE";
     private static final String TABLE_NAME_TEMPLATE = "TABLE_NAME_TEMPLATE";
-    private static final String OUTPUT_QUEUE_URL = "OUTPUT_QUEUE_URL";
-    private static final String INPUT_QUEUE_URL = "INPUT_QUEUE_URL";
+    private static final String OUTPUT_QUEUE_URL_TEMPLATE = "OUTPUT_QUEUE_URL_TEMPLATE";
+    private static final String INPUT_QUEUE_URL_TEMPLATE = "INPUT_QUEUE_URL_TEMPLATE";
     private static final String COGNITO_URL = "COGNITO_URL";
 
     public MyStack(Construct scope, String system, String environment, Map<String, Object> envConfig,
@@ -94,22 +87,10 @@ public class MyStack extends Stack {
 
         String bucketNameTemplate = String.format("%s-%s-bucket-<tenantId>", system, environment.toLowerCase());
         String tableNameTemplate = String.format("%s-%s-table-<tenantId>", system, environment);
-
-        String inputQueueId = String.format("%s-%s-input-queue.fifo", system, environment);
-        Queue inputQueue = Queue.Builder.create(this, inputQueueId)
-                .queueName(inputQueueId)
-                .encryption(QueueEncryption.KMS_MANAGED)
-                .visibilityTimeout(Duration.seconds(INPUT_VISIBILITY_TIMEOUT_IN_SECS))
-                .fifo(true)
-                .build();
-
-        String outputQueueId = String.format("%s-%s-output-queue.fifo", system, environment);
-        Queue outputQueue = Queue.Builder.create(this, outputQueueId)
-                .queueName(outputQueueId)
-                .encryption(QueueEncryption.KMS_MANAGED)
-                .visibilityTimeout(Duration.seconds(OUTPUT_VISIBILITY_TIMEOUT_IN_SECS))
-                .fifo(true)
-                .build();
+        String inputQueueNameTemplate = String.format("%s-%s-queue-input-<tenantId>", system, environment);
+        String inputQueueUrlTemplate = QueueUtils.buildQueueUrlFromNameTemplate(getAccount(), getRegion(), inputQueueNameTemplate);
+        String outputQueueNameTemplate = String.format("%s-%s-queue-output-<tenantId>", system, environment);
+        String outputQueueUrlTemplate = QueueUtils.buildQueueUrlFromNameTemplate(getAccount(), getRegion(), outputQueueNameTemplate);
 
         String authFunctionName = String.format("%s-%s-auth-function", system, environment);
         Function authFunction = Function.Builder.create(this, authFunctionName)
@@ -134,10 +115,10 @@ public class MyStack extends Stack {
                         bucketNameTemplate,
                         TABLE_NAME_TEMPLATE,
                         tableNameTemplate,
-                        INPUT_QUEUE_URL,
-                        inputQueue.getQueueUrl(),
-                        OUTPUT_QUEUE_URL,
-                        outputQueue.getQueueUrl()))
+                        INPUT_QUEUE_URL_TEMPLATE,
+                        inputQueueUrlTemplate,
+                        OUTPUT_QUEUE_URL_TEMPLATE,
+                        outputQueueUrlTemplate))
                 .build();
 
         String toApiFunctionName = String.format("%s-%s-to-api-function", system, environment);
@@ -162,10 +143,7 @@ public class MyStack extends Stack {
                 .environment(Map.of(TABLE_NAME_TEMPLATE, tableNameTemplate))
                 .build();
 
-        fromQueueToTableFunction.addEventSource(
-                SqsEventSource.Builder.create(outputQueue).batchSize(10).reportBatchItemFailures(true).build());
-        inputQueue.grantSendMessages(fromApiFunction);
-        
+
         @SuppressWarnings("unchecked") 
         List<String> tenantIds = (List<String>) envConfig.get("tenantIds");
         
@@ -214,12 +192,33 @@ public class MyStack extends Stack {
                     .removalPolicy(RemovalPolicy.RETAIN)
                     .encryptionKey(key)
                     .build();
+
+            String inputQueueId = String.format("%s-%s-queue-input-%s.fifo", system, environment, tenantId);
+            Queue inputQueue = Queue.Builder.create(this, inputQueueId)
+                    .queueName(inputQueueId)
+                    .encryption(QueueEncryption.KMS_MANAGED)
+                    .visibilityTimeout(Duration.seconds(INPUT_VISIBILITY_TIMEOUT_IN_SECS))
+                    .fifo(true)
+                    .build();
+
+            String outputQueueId = String.format("%s-%s-queue-output-%s.fifo", system, environment, tenantId);
+            Queue outputQueue = Queue.Builder.create(this, outputQueueId)
+                    .queueName(outputQueueId)
+                    .encryption(QueueEncryption.KMS_MANAGED)
+                    .visibilityTimeout(Duration.seconds(OUTPUT_VISIBILITY_TIMEOUT_IN_SECS))
+                    .fifo(true)
+                    .build();
+
             buckets.add(bucket);
             bucket.grantWrite(fromApiFunction);
             table.grantWriteData(fromApiFunction);
 
             table.grantFullAccess(toApiFunction);
             table.grantWriteData(fromQueueToTableFunction);
+            
+            fromQueueToTableFunction.addEventSource(
+                    SqsEventSource.Builder.create(outputQueue).batchSize(10).reportBatchItemFailures(true).build());
+            inputQueue.grantSendMessages(fromApiFunction);
         }
 
         HttpUserPoolAuthorizer httpUserPoolAuthorizer = HttpUserPoolAuthorizer.Builder
@@ -267,44 +266,6 @@ public class MyStack extends Stack {
                 .integration(toApiIntegration)
                 .authorizer(httpUserPoolAuthorizer)
                 .build());
-
-        // Criar Log Group para API Gateway
-        LogGroup apiLogGroup = LogGroup.Builder.create(this, String.format("%s-%s-api-logs", system, environment))
-                .logGroupName(String.format("/aws/apigateway/%s-%s-api", system, environment))
-                .retention(RetentionDays.ONE_MONTH)
-                .removalPolicy(RemovalPolicy.DESTROY)
-                .build();
-
-        // Criar role para API Gateway escrever logs
-        Role apiGatewayRole = Role.Builder.create(this, String.format("%s-%s-api-gateway-role", system, environment))
-                .assumedBy(new ServicePrincipal("apigateway.amazonaws.com"))
-                .managedPolicies(List.of(
-                        ManagedPolicy.fromAwsManagedPolicyName("service-role/AmazonAPIGatewayPushToCloudWatchLogs")))
-                .build();
-
-        // Configurar logs no stage do API Gateway
-        CfnStage cfnStage = (CfnStage) httpApi.getDefaultStage().getNode().getDefaultChild();
-        cfnStage.setAccessLogSettings(CfnStage.AccessLogSettingsProperty.builder()
-                .destinationArn(apiLogGroup.getLogGroupArn())
-                .format("{" + "  \"requestId\": \"$context.requestId\","
-                        + "  \"sourceIp\": \"$context.identity.sourceIp\","
-                        + "  \"requestTime\": \"$context.requestTime\"," + "  \"httpMethod\": \"$context.httpMethod\","
-                        + "  \"routeKey\": \"$context.routeKey\"," + "  \"status\": \"$context.status\","
-                        + "  \"protocol\": \"$context.protocol\","
-                        + "  \"responseLength\": \"$context.responseLength\","
-                        + "  \"errorMessage\": \"$context.error.message\","
-                        + "  \"errorResponseType\": \"$context.error.responseType\","
-                        + "  \"integrationErrorMessage\": \"$context.integrationErrorMessage\","
-                        + "  \"integrationError\": \"$context.integration.error\","
-                        + "  \"integrationStatus\": \"$context.integration.status\","
-                        + "  \"integrationLatency\": \"$context.integration.latency\","
-                        + "  \"integrationRequestId\": \"$context.integration.requestId\","
-                        + "  \"integrationIntegrationStatus\": \"$context.integration.integrationStatus\","
-                        + "  \"authorizerError\": \"$context.authorizer.error\"" + "}")
-                .build());
-
-        // Adicionar permissão para o API Gateway escrever logs
-        apiLogGroup.grantWrite(apiGatewayRole);
 
         CfnOutput.Builder.create(this, String.format("%s-%s-api-url-output", system, environment))
                 .value(httpApi.getApiEndpoint())
