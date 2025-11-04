@@ -94,7 +94,7 @@ public class Handler implements RequestHandler<SQSEvent, SQSBatchResponse> {
         return sqsResponse;
     }
 
-    private void updateDynamoDB(SqsResponse response) throws JsonProcessingException {
+    private void updateDynamoDB(SqsResponse response) {
         Map<String, AttributeValue> key = buildDynamoDBKey(response.getTenantId(), response.getRequestId());
         UpdateItemRequest updateRequest = buildUpdateRequest(response, key);
 
@@ -108,8 +108,7 @@ public class Handler implements RequestHandler<SQSEvent, SQSBatchResponse> {
         return key;
     }
 
-    private UpdateItemRequest buildUpdateRequest(SqsResponse response, Map<String, AttributeValue> key)
-            throws JsonProcessingException {
+    private UpdateItemRequest buildUpdateRequest(SqsResponse response, Map<String, AttributeValue> key) {
         Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
         Map<String, String> expressionAttributeNames = new HashMap<>();
         StringBuilder updateExpression = new StringBuilder();
@@ -124,8 +123,7 @@ public class Handler implements RequestHandler<SQSEvent, SQSBatchResponse> {
     }
 
     private void buildUpdateExpression(SqsResponse response, Map<String, AttributeValue> expressionAttributeValues,
-            Map<String, String> expressionAttributeNames, StringBuilder updateExpression)
-            throws JsonProcessingException {
+            Map<String, String> expressionAttributeNames, StringBuilder updateExpression) {
 
         expressionAttributeValues.put(":queueResult", new AttributeValue(response.getMessage()));
 

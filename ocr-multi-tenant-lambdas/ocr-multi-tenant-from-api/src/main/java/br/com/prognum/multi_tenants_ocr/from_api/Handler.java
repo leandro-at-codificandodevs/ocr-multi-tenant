@@ -100,7 +100,7 @@ public class Handler implements RequestHandler<APIGatewayV2HTTPEvent, APIGateway
         return new ApiRequest(documentType, correlationId, document);
     }
 
-    private String saveDocumentToS3(String tenantId, String requestId, ApiRequest apiRequest) throws Exception {
+    private String saveDocumentToS3(String tenantId, String requestId, ApiRequest apiRequest) {
         String bucketName = config.buildBucketName(tenantId);
         String s3Key = String.format("tenants/%s/requests/%s", tenantId, requestId);
 

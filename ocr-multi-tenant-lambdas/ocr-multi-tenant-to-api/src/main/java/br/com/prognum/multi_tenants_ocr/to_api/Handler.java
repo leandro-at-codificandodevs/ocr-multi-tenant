@@ -99,7 +99,7 @@ public class Handler implements RequestHandler<APIGatewayV2HTTPEvent, APIGateway
         return APIGatewayV2HTTPResponse.builder().withStatusCode(404).build();
     }
 
-    private APIGatewayV2HTTPResponse buildSuccessResponse(String body) throws Exception {
+    private APIGatewayV2HTTPResponse buildSuccessResponse(String body) {
         return APIGatewayV2HTTPResponse.builder()
                 .withStatusCode(200)
                 .withHeaders(Map.of("Content-Type", "application/json"))
