@@ -21,6 +21,14 @@
             "31872495000172"
          ]
       },
+      "PROD1":{
+         "system":"integration-ocr-prognum",
+         "domainPrefix":"integration-ocr-prod1-prognum",
+         "tenantIds":[
+            "00416968000101",
+            "31872495000172"
+         ]
+      },
       "PROD2":{
          "system":"integration-ocr-prognum",
          "domainPrefix":"integration-ocr-prod2-prognum",
@@ -29,11 +37,20 @@
             "31872495000172"
          ]
       },
-      "C6-PROD":{
+      "DEV":{
          "system":"integration-ocr-prognum",
-         "domainPrefix":"integration-ocr-c6-prod-prognum",
+         "domainPrefix":"integration-ocr-dev-prognum",
          "tenantIds":[
-            "00416968000101"
+            "70002320000166",
+            "99426230000184"
+         ]
+      },
+      "DEV1":{
+         "system":"integration-ocr-prognum",
+         "domainPrefix":"integration-ocr-dev1-prognum",
+         "tenantIds":[
+            "70002320000166",
+            "99426230000184"
          ]
       },
       "DEV2":{
@@ -42,14 +59,6 @@
          "tenantIds":[
             "70002320000166",
             "99426230000184"
-         ]
-      },
-      "LOCAL":{
-         "system":"integration-ocr-15151580",
-         "domainPrefix":"integration-ocr-dev-15151580",
-         "tenantIds":[
-            "50",
-            "51"
          ]
       },
       "@aws-cdk/aws-lambda:recognizeLayerVersion":true,
