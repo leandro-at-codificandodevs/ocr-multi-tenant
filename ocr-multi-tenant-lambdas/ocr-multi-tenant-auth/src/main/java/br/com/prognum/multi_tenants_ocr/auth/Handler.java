@@ -34,7 +34,6 @@ public class Handler implements RequestHandler<APIGatewayV2HTTPEvent, APIGateway
 
 	@Override
 	public APIGatewayV2HTTPResponse handleRequest(APIGatewayV2HTTPEvent event, Context context) {
-		System.out.printf("Evento: %s - Contexto: %s\n", event, context);
 		try {
 			AuthRequest authRequest = objectMapper.readValue(event.getBody(), AuthRequest.class);
 			String accessToken = authenticateWithCognito(authRequest.getClientId(), authRequest.getClientSecret());
@@ -47,10 +46,6 @@ public class Handler implements RequestHandler<APIGatewayV2HTTPEvent, APIGateway
 
 	private String authenticateWithCognito(String clientId, String clientSecret) throws Exception {
 		HttpRequest request = buildCognitoRequest(clientId, clientSecret);
-		System.out.println(request);
-		System.out.println(request.headers());
-		System.out.println(request.uri());
-		System.out.println(request.bodyPublisher().get());
 
 		HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 

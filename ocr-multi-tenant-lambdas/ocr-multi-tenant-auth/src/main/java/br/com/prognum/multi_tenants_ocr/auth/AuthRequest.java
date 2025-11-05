@@ -38,4 +38,8 @@ public class AuthRequest {
         this.clientSecret = clientSecret;
     }
 
+	@Override
+	public String toString() {
+		return "AuthRequest [clientId=" + clientId + ", clientSecret=" + clientSecret + "]";
+	}
 }
